@@ -1,0 +1,24 @@
+import express from 'express';
+
+import { login,register,logout, updateProfile, isAuthenticated } from '../controllers/auth.controllers.js';
+import { sendOtp, verifyOtp } from '../controllers/emailVerification.controllers.js';
+import {protectRoute} from '../middlewares/auth.middlewares.js'
+
+const router = express.Router();
+
+router.post('/register',register); 
+
+router.post('/login', login);
+
+router.get('/logout', logout);
+
+router.get('/send-otp',protectRoute,sendOtp);
+
+router.put('/verify-otp',protectRoute,verifyOtp);
+
+router.put('/update',protectRoute,updateProfile);
+
+router.get('/is-authenticated',protectRoute,isAuthenticated)
+
+
+export default router;
