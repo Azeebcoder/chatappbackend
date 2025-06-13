@@ -57,7 +57,8 @@ export const sendFriendRequest = async (req, res) => {
 };
 
 export const acceptFriendRequest = async (req, res) => {
-  const { userId, requesterId } = req.body;
+  const userId = req.user._id; // comes from auth middleware
+  const { requesterId } = req.body; // requesterId is passed in the URL
   try {
     const user = await User.findById(userId);
     const requester = await User.findById(requesterId);
@@ -81,6 +82,28 @@ export const acceptFriendRequest = async (req, res) => {
   }
 };
 
+export const deleteFriendRequest = async (req,res) => {
+  const userId = req.user._id; // comes from auth middleware
+  const { requestId } = req.body; // requestId is passed in the URL
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user.friendRequests.includes(requestId)) {
+      return res.status(400).json({ message: "No such friend request." });
+    }
+
+    user.friendRequests = user.friendRequests.filter(
+      (id) => id.toString() !== requestId
+    );
+    await user.save();
+
+    res.status(200).json({ message: "Friend request deleted." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export const getFriends = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -98,13 +121,13 @@ export const getFriends = async (req, res) => {
 };
 
 export const getPendingRequests = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user._id;
   try {
     const user = await User.findById(userId).populate(
       "friendRequests",
       "username name"
     );
-    res.status(200).json(user.friendRequests);
+    res.status(200).json({ success: true, data: user.friendRequests });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
