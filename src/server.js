@@ -11,12 +11,13 @@ import friendsRoutes from './routes/friends.routes.js';
 import connectDB from './db/db.js';
 import cors from 'cors'
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_URL || "http://localhost:5173", // ✅ use environment variable for client URL
   credentials: true
 }));
 
