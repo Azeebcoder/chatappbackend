@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173", // ✅ use environment variable for client URL
+  origin: "https://sumychat.netlify.app", // ✅ use environment variable for client URL
   credentials: true
 }));
 
