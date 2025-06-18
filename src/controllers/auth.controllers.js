@@ -2,6 +2,8 @@ import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/utils.js";
 import validator from "validator";
+import cloudinary from "../utils/cloudnary.js";
+import streamifier from "streamifier";
 
 export const register = async (req, res) => {
   const { username, email, password, name } = req.body;
@@ -25,6 +27,25 @@ export const register = async (req, res) => {
         .json({ success: false, message: "Invalid email format" });
     }
 
+    let profilePicUrl = "";
+
+    if (req.file) {
+      const streamUpload = (buffer) => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "users" },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          streamifier.createReadStream(buffer).pipe(stream);
+        });
+      };
+
+      const result = await streamUpload(req.file.buffer);
+      profilePicUrl = result.secure_url;
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -32,6 +53,7 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       name,
+      profilePic: profilePicUrl,
     });
 
     generateToken(newUser._id, res);
@@ -45,6 +67,7 @@ export const register = async (req, res) => {
         username: savedUser.username,
         email: savedUser.email,
         name: savedUser.name,
+        profilePic: savedUser.profilePic,
       },
     });
   } catch (error) {
@@ -98,18 +121,20 @@ export const logout = (req, res) => {
 export const isAuthenticated = async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success:false,message: "User is not authenticated" });
+      return res
+        .status(401)
+        .json({ success: false, message: "User is not authenticated" });
     }
-    if(!req.user.isVerified){
-      return res.status(403).json({ success: false, message: "User is not verified" });
+    if (!req.user.isVerified) {
+      return res
+        .status(403)
+        .json({ success: false, message: "User is not verified" });
     }
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "user is authenticated",
-        data: req.user,
-      });
+    return res.status(200).json({
+      success: true,
+      message: "user is authenticated",
+      data: req.user,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error });
   }

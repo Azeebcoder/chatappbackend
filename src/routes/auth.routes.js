@@ -3,10 +3,11 @@ import express from 'express';
 import { login,register,logout, updateProfile, isAuthenticated } from '../controllers/auth.controllers.js';
 import { sendOtp, verifyOtp } from '../controllers/emailVerification.controllers.js';
 import {protectRoute} from '../middlewares/auth.middlewares.js'
+import upload from '../middlewares/upload.js';
 
 const router = express.Router();
 
-router.post('/register',register); 
+router.post("/register", upload.single("profilePic"), register);
 
 router.post('/login', login);
 
