@@ -1,10 +1,11 @@
 import Message from "../models/message.model.js";
 import Chat from "../models/chat.model.js";
-
-
+import mongoose from "mongoose";
 
 export const sendMessage = async (req, res) => {
-  const { chatId, senderId, content, messageType, attachments } = req.body;
+  const { chatId } = req.params;
+  const senderId = req.user._id;
+  const { content, messageType, attachments } = req.body;
 
   if (!chatId || !senderId || !content) {
     return res.status(400).json({ message: "All fields are required" });
@@ -30,7 +31,9 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   const { chatId } = req.params;
   try {
-    const messages = await Message.find({ chat: chatId }).populate("sender", "username").sort("createdAt");
+    const messages = await Message.find({ chat: chatId })
+      .populate("sender", "username")
+      .sort("createdAt");
     res.status(200).json(messages);
   } catch (error) {
     res.status(500).json({ message: error.message });

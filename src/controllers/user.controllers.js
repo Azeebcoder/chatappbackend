@@ -17,6 +17,7 @@ export const getChattedUsers = async (req, res) => {
       chat.participants.forEach((participant) => {
         if (participant._id.toString() !== userId.toString()) {
           chattedUsersMap.set(participant._id.toString(), {
+            chats: chat._id, // ✅ include chat ID
             _id: participant._id,
             username: participant.username,
             name: participant.name,
@@ -28,6 +29,7 @@ export const getChattedUsers = async (req, res) => {
     });
 
     const chattedUsers = Array.from(chattedUsersMap.values());
+    console.log(chats)
 
     res.status(200).json({ success: true, data: chattedUsers });
   } catch (error) {

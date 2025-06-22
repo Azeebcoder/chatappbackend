@@ -4,7 +4,7 @@ import { getChattedUsers, getSearchedUsers } from '../controllers/user.controlle
 
 const router = express.Router();
 
-router.get('/getchatteduser', protectRoute,getChattedUsers)
+router.get('/getchatteduser', protectRoute,getChattedUsers);
 router.get('/searchedusers', protectRoute,getSearchedUsers);
 
 export default router;

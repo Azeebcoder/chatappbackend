@@ -5,7 +5,7 @@ import { createChat } from '../controllers/chat.controlles.js';
 const router = express.Router();
 
 router.get('/getmessage/:chatId',protectRoute,getMessages);
-router.put('/sendmessage',protectRoute,sendMessage);
+router.post('/sendmessage/:chatId',protectRoute,sendMessage);
 router.post('/createchat',protectRoute,createChat); // Assuming createChat is similar to sendMessage
 
 export default router;
