@@ -1,5 +1,6 @@
+import {app,server,io} from './utils/socket.js'; // ✅ import from utils/socket.js
 import express from 'express';
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'
 dotenv.config();
 
 import cookieParser from 'cookie-parser'; // ✅ correct import
@@ -10,9 +11,6 @@ import messageRoutes from './routes/message.routes.js'
 import friendsRoutes from './routes/friends.routes.js';
 import connectDB from './db/db.js';
 import cors from 'cors'
-
-
-const app = express();
 const PORT = process.env.PORT || 3000;
 
 
@@ -29,7 +27,15 @@ app.use('/api/chat',chatUserRoutes);
 app.use('/api/message',messageRoutes);
 app.use('/api/friends',friendsRoutes);
 
-app.listen(PORT, () => {
+// Socket.io setup
+io.on('connection',(socket) => {
+  console.log('a user connected');
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+})
+
+server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   connectDB();
 });
