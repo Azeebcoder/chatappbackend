@@ -1,6 +1,7 @@
 import Message from "../models/message.model.js";
 import Chat from "../models/chat.model.js";
 import mongoose from "mongoose";
+import { io } from "../utils/socket.js"; // ✅ import the Socket.IO instance
 
 export const sendMessage = async (req, res) => {
   const { chatId } = req.params;
@@ -22,7 +23,11 @@ export const sendMessage = async (req, res) => {
 
     await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
 
-    res.status(201).json(newMessage);
+    // ✅ Emit the new message to all clients in the chat room
+    const populatedMessage = await newMessage.populate("sender", "username"); // Optional but useful
+    io.to(chatId).emit("newMessage", populatedMessage);
+
+    res.status(201).json(populatedMessage);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

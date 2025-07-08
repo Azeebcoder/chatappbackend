@@ -28,12 +28,19 @@ app.use('/api/message',messageRoutes);
 app.use('/api/friends',friendsRoutes);
 
 // Socket.io setup
-io.on('connection',(socket) => {
-  console.log('a user connected');
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+io.on('connection', (socket) => {
+  console.log('✅ A user connected:', socket.id);
+
+  // Listen for client joining a specific chat room
+  socket.on('joinChat', (chatId) => {
+    socket.join(chatId);
+    console.log(`🔗 Socket ${socket.id} joined chat ${chatId}`);
   });
-})
+
+  socket.on('disconnect', () => {
+    console.log('❌ User disconnected:', socket.id);
+  });
+});
 
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

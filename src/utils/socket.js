@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*", // just to test
+    origin: process.env.CLIENT_URL, // just to test
     methods: ['GET', 'POST'],
     credentials: true
   }
