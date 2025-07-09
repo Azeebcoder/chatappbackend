@@ -137,6 +137,9 @@ export const updateProfile = async (req, res) => {
 
     // ✅ Confirm req.body is being parsed correctly
     console.log("Incoming body:", req.body);
+    console.log("Cookies:", req.cookies);
+console.log("req.body.name:", req.body.name);
+console.log("req.file:", req.file);
 
     const { name, password } = req.body;
 
