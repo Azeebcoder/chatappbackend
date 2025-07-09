@@ -34,7 +34,6 @@ io.on('connection', (socket) => {
   // Listen for client joining a specific chat room
   socket.on('joinChat', (chatId) => {
     socket.join(chatId);
-    console.log(`🔗 Socket ${socket.id} joined chat ${chatId}`);
   });
 
   socket.on('disconnect', () => {

@@ -3,10 +3,6 @@ import User from "../models/user.model.js";
 export const sendFriendRequest = async (req, res) => {
   const fromUserId = req.user?._id; // comes from auth middleware
   const { toUserId } = req.body;
-
-  console.log("From User ID:", fromUserId);
-  console.log("To User ID:", toUserId);
-
   // Validation
   if (!fromUserId || !toUserId) {
     return res

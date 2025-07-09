@@ -43,6 +43,8 @@ export const getSearchedUsers = async (req, res) => {
   const currentUserId = req.user._id;
 
   try {
+    const currentUser = await User.findById(currentUserId).select("friends");
+
     const users = await User.find({
       $or: [
         { name: { $regex: search, $options: "i" } },
@@ -56,12 +58,14 @@ export const getSearchedUsers = async (req, res) => {
       username: user.username,
       name: user.name,
       email: user.email,
-      profilePic: user.profilePic || "", // ✅ include profilePic
+      profilePic: user.profilePic || "",
       isRequested: user.friendRequests.includes(currentUserId),
+      isFriend: currentUser.friends.includes(user._id),
     }));
 
     res.status(200).json({ success: true, data: filteredUsers });
   } catch (error) {
+    console.error("🔴 getSearchedUsers error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
