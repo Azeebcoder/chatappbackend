@@ -88,3 +88,33 @@ export const getCurrentUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
+// 🟢 Get selected user's profile
+
+export const getSelectedUserProfile = async (req, res) => {
+  const userId = req.params.userId;
+  const currentUserId = req.user._id;
+
+  try {
+    const user = await User.findById(userId)
+      .select("username name email profilePic friends friendRequests")
+      .populate("friends", "username name profilePic");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    const isRequested = user.friendRequests.includes(currentUserId);
+    const isFriend = user.friends.includes(currentUserId);
+    res.status(200).json({
+      success: true,
+      data: {
+        ...user.toObject(),
+        isRequested,
+        isFriend,
+      },
+    });
+  }
+  catch (error) {
+    console.error("🔴 getSelectedUserProfile error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
