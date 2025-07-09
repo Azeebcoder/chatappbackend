@@ -5,29 +5,35 @@ import validator from "validator";
 import cloudinary from "../utils/cloudnary.js";
 import streamifier from "streamifier";
 
+// REGISTER
 export const register = async (req, res) => {
   const { username, email, password, name } = req.body;
 
   try {
     if (!username || !email || !password || !name) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
     }
 
     if (!validator.isEmail(email)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid email format" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
     }
 
     let profilePicUrl = "";
+    let profilePicPublicId = "";
 
     if (req.file) {
       const streamUpload = (buffer) => {
@@ -45,15 +51,18 @@ export const register = async (req, res) => {
 
       const result = await streamUpload(req.file.buffer);
       profilePicUrl = result.secure_url;
+      profilePicPublicId = result.public_id;
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
-      username,
+      username: username.toLowerCase(),
       email,
       password: hashedPassword,
       name,
       profilePic: profilePicUrl,
+      profilePicPublicId,
     });
 
     generateToken(newUser._id, res);
@@ -71,16 +80,19 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Register Error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// LOGIN
 export const login = async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Username and password are required" });
+    return res.status(400).json({
+      success: false,
+      message: "Username and password are required",
+    });
   }
 
   try {
@@ -88,15 +100,18 @@ export const login = async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ success: false, message: "invalid credintial 1" });
+        .json({ success: false, message: "Invalid credentials 1" });
     }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res
         .status(400)
-        .json({ success: false, message: "invalid credintial 2" });
+        .json({ success: false, message: "Invalid credentials 2" });
     }
+
     generateToken(user._id, res);
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -105,19 +120,99 @@ export const login = async (req, res) => {
         username: user.username,
         email: user.email,
         name: user.name,
+        profilePic: user.profilePic,
       },
     });
   } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-export const updateProfile = async (req, res) => {};
+// UPDATE PROFILE
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, password } = req.body;
 
-export const logout = (req, res) => {
-  res.send("logout page");
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (name) user.name = name;
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters",
+        });
+      }
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    if (req.file) {
+      // Delete old image from Cloudinary
+      if (user.profilePicPublicId) {
+        await cloudinary.uploader.destroy(user.profilePicPublicId);
+      }
+
+      const streamUpload = (buffer) => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "users" },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+          streamifier.createReadStream(buffer).pipe(stream);
+        });
+      };
+
+      const result = await streamUpload(req.file.buffer);
+      user.profilePic = result.secure_url;
+      user.profilePicPublicId = result.public_id;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        profilePic: user.profilePic,
+      },
+    });
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 };
 
+// LOGOUT
+export const logout = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "Lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+};
+
+// CHECK AUTH
 export const isAuthenticated = async (req, res) => {
   try {
     if (!req.user) {
@@ -125,17 +220,20 @@ export const isAuthenticated = async (req, res) => {
         .status(401)
         .json({ success: false, message: "User is not authenticated" });
     }
+
     if (!req.user.isVerified) {
       return res
         .status(403)
         .json({ success: false, message: "User is not verified" });
     }
+
     return res.status(200).json({
       success: true,
-      message: "user is authenticated",
+      message: "User is authenticated",
       data: req.user,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error });
+    console.error("Auth Check Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

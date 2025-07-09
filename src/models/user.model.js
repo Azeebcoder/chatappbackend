@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", // default avatar
     },
+    profilePicPublicId: {
+  type: String,
+  default: "",
+},
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
