@@ -69,3 +69,22 @@ export const getSearchedUsers = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 🟢 Get current user's profile
+
+export const getCurrentUserProfile = async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const user = await User.findById(userId)
+      .select("username name email profilePic friends")
+      .populate("friends", "username name profilePic");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    console.error("🔴 getCurrentUserProfile error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}

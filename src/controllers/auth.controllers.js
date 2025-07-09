@@ -130,9 +130,14 @@ export const login = async (req, res) => {
 };
 
 // UPDATE PROFILE
+
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
+
+    // ✅ Confirm req.body is being parsed correctly
+    console.log("Incoming body:", req.body);
+
     const { name, password } = req.body;
 
     const user = await User.findById(userId);
@@ -155,7 +160,7 @@ export const updateProfile = async (req, res) => {
     }
 
     if (req.file) {
-      // Delete old image from Cloudinary
+      // Delete previous image if exists
       if (user.profilePicPublicId) {
         await cloudinary.uploader.destroy(user.profilePicPublicId);
       }

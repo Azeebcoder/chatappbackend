@@ -17,7 +17,7 @@ router.get('/send-otp',protectRoute,sendOtp);
 
 router.put('/verify-otp',protectRoute,verifyOtp);
 
-router.put('/update',protectRoute,updateProfile);
+router.put('/update-profile',protectRoute, upload.single("file"),updateProfile);
 
 router.get('/is-authenticated',protectRoute,isAuthenticated)
 
