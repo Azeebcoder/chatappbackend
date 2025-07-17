@@ -32,15 +32,20 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 export const getMessages = async (req, res) => {
   const { chatId } = req.params;
+  const { limit = 20, skip = 0 } = req.query;
+
   try {
     const messages = await Message.find({ chat: chatId })
-      .populate("sender", "username profilePic name")
-      .sort("createdAt");
-    res.status(200).json(messages);
+      .sort({ createdAt: -1 }) // Newest first
+      .skip(Number(skip))
+      .limit(Number(limit))
+      .populate("sender", "username profilePic name");
+
+    res.status(200).json(messages.reverse()); // Reversed to display oldest first in frontend
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
