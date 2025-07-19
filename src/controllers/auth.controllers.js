@@ -135,12 +135,6 @@ export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // ✅ Confirm req.body is being parsed correctly
-    console.log("Incoming body:", req.body);
-    console.log("Cookies:", req.cookies);
-console.log("req.body.name:", req.body.name);
-console.log("req.file:", req.file);
-
     const { name, password } = req.body;
 
     const user = await User.findById(userId);
@@ -210,7 +204,7 @@ export const logout = (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
     expires: new Date(0),
-    sameSite: "Lax",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
   });
 
