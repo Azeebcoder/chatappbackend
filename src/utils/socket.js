@@ -4,6 +4,8 @@ dotenv.config();
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
+import User from '../models/user.model.js'
+import onlineUsers from './onlineUsers.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -16,7 +18,7 @@ const io = new Server(server, {
   },
 });
 
-const onlineUsers = new Map(); // userId => socket.id
+
 
 io.on('connection', (socket) => {
   const userId = socket.handshake.auth?.userId;
@@ -52,9 +54,14 @@ io.on('connection', (socket) => {
   });
 
   // Disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     onlineUsers.delete(userId);
     io.emit('activeUsers', Array.from(onlineUsers.keys()));
+    try {
+      await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+    } catch (err) {
+      console.error('Failed to update lastSeen:', err);
+    }
   });
 });
 
