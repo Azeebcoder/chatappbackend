@@ -6,7 +6,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import User from '../models/user.model.js'
 import onlineUsers from './onlineUsers.js';
-
+import Message from '../models/message.model.js'
 const app = express();
 const server = http.createServer(app);
 
@@ -51,6 +51,22 @@ io.on('connection', (socket) => {
 
   socket.on('stopTyping', (chatId) => {
     socket.to(chatId).emit('stopTyping', userId);
+  }); 
+
+
+  //read recipt 
+  socket.on('messageRead', async ({ chatId, messageIds }) => {
+    try {
+      // Update DB (set messages as read)
+      await Message.updateMany(
+        { _id: { $in: messageIds }, chat: chatId },
+        { $set: { read: true } }
+      );
+      // Notify other users
+      socket.to(chatId).emit('messagesRead', { userId, messageIds });
+    } catch (err) {
+      console.error('Failed to mark messages as read:', err);
+    }
   });
 
   // Disconnect
