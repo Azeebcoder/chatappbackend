@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
+      lowercase: true,
       trim: true,
     },
     password: {
@@ -28,9 +30,15 @@ const userSchema = new mongoose.Schema(
       default: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", // default avatar
     },
     profilePicPublicId: {
-  type: String,
-  default: "",
-},
+      type: String,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      default: "Hey there! I am using SumyChat",
+    },
+
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
@@ -52,6 +60,21 @@ const userSchema = new mongoose.Schema(
     socketId: {
       type: String,
       default: "",
+    },
+
+    postsCount: {
+      type: Number,
+      default: 0, // For showing stats like "Posts"
+    },
+
+    followersCount: {
+      type: Number,
+      default: 0,
+    },
+
+    followingCount: {
+      type: Number,
+      default: 0,
     },
 
     isVerified: {

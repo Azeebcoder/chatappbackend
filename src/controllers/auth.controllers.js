@@ -131,21 +131,27 @@ export const login = async (req, res) => {
 
 // UPDATE PROFILE
 
+
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    const { name, password } = req.body;
+    const { name, password, bio, statusMessage } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // Update Name
     if (name) user.name = name;
 
+    // Update Bio
+    if (bio !== undefined) user.bio = bio;
+
+    // Update Status Message
+    if (statusMessage !== undefined) user.statusMessage = statusMessage;
+
+    // Update Password (if provided)
     if (password) {
       if (password.length < 6) {
         return res.status(400).json({
@@ -156,8 +162,8 @@ export const updateProfile = async (req, res) => {
       user.password = await bcrypt.hash(password, 10);
     }
 
+    // Update Profile Picture (if uploaded)
     if (req.file) {
-      // Delete previous image if exists
       if (user.profilePicPublicId) {
         await cloudinary.uploader.destroy(user.profilePicPublicId);
       }
@@ -190,6 +196,8 @@ export const updateProfile = async (req, res) => {
         username: user.username,
         email: user.email,
         name: user.name,
+        bio: user.bio,
+        statusMessage: user.statusMessage,
         profilePic: user.profilePic,
       },
     });
@@ -198,6 +206,7 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // LOGOUT
 export const logout = (req, res) => {
