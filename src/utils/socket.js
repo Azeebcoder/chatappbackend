@@ -35,6 +35,13 @@ io.on('connection', (socket) => {
   // Emit updated online user list
   io.emit('activeUsers', Array.from(onlineUsers.keys()));
 
+    // Add this so clients can request the current list
+
+
+  socket.on("getActiveUsers", () => {
+    socket.emit("activeUsers", Array.from(onlineUsers.keys()));
+  });
+
   // Join/leave chat rooms
   socket.on('joinChat', (chatId) => {
     socket.join(chatId);
