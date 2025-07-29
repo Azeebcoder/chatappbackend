@@ -22,9 +22,9 @@ export const protectRoute = async (req, res, next) => {
     }
 
     // ✅ Check if the user has verified their email
-    if (!user.isVerified) {
+   /* if (!user.isVerified) {
       return res.status(403).json({ success: false, message: "Please verify your email" });
-    }
+    }*/
 
     req.user = user; // attach user to request
     next();
