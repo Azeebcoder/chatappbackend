@@ -88,26 +88,33 @@ export const register = async (req, res) => {
 // LOGIN
 export const login = async (req, res) => {
   const { username, password } = req.body;
+
   if (!username || !password) {
     return res.status(400).json({
       success: false,
-      message: "Username and password are required",
+      message: !username
+        ? "Username is required"
+        : "Password is required",
     });
   }
 
   try {
     const user = await User.findOne({ username: username.toLowerCase() });
+
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials 1" });
+      return res.status(400).json({
+        success: false,
+        message: "Username not found",
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials 2" });
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect password",
+      });
     }
 
     generateToken(user._id, res);
@@ -123,9 +130,11 @@ export const login = async (req, res) => {
         profilePic: user.profilePic,
       },
     });
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
