@@ -49,3 +49,61 @@ export const getMessages = async (req, res) => {
   }
 };
 
+export const deleteMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.user._id;
+
+  try {
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    // Optional: Only sender can delete their message
+    if (message.sender.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+
+    // Emit deleted message event
+    io.to(message.chat.toString()).emit("deleteMessage", messageId);
+
+    res.status(200).json({ message: "Message deleted", messageId });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Edit a message
+export const editMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const { content } = req.body;
+  const userId = req.user._id;
+
+  try {
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (message.sender.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    message.content = content;
+    message.edited = true;
+    await message.save();
+
+    const populatedMessage = await message.populate("sender", "username");
+
+    // Emit edited message to chat
+    io.to(message.chat.toString()).emit("editMessage", populatedMessage);
+
+    res.status(200).json(populatedMessage);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
