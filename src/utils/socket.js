@@ -4,9 +4,10 @@ dotenv.config();
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import User from '../models/user.model.js'
+import User from '../models/user.model.js';
 import onlineUsers from './onlineUsers.js';
-import Message from '../models/message.model.js'
+import Message from '../models/message.model.js';
+
 const app = express();
 const server = http.createServer(app);
 
@@ -17,8 +18,6 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
-
 
 io.on('connection', (socket) => {
   const userId = socket.handshake.auth?.userId;
@@ -35,9 +34,7 @@ io.on('connection', (socket) => {
   // Emit updated online user list
   io.emit('activeUsers', Array.from(onlineUsers.keys()));
 
-    // Add this so clients can request the current list
-
-
+  // Allow client to request current list
   socket.on("getActiveUsers", () => {
     socket.emit("activeUsers", Array.from(onlineUsers.keys()));
   });
@@ -58,28 +55,66 @@ io.on('connection', (socket) => {
 
   socket.on('stopTyping', (chatId) => {
     socket.to(chatId).emit('stopTyping', userId);
-  }); 
+  });
 
-
-  //read recipt 
+  // ✅ Read Receipt: messageRead
   socket.on('messageRead', async ({ chatId, messageIds }) => {
     try {
-      // Update DB (set messages as read)
       await Message.updateMany(
         { _id: { $in: messageIds }, chat: chatId },
-        { $set: { read: true } }
+        {
+          $set: { status: 'read' },
+          $addToSet: { seenBy: userId },
+        }
       );
-      // Notify other users
-      socket.to(chatId).emit('messagesRead', { userId, messageIds });
+
+      // Notify other users in the room
+      socket.to(chatId).emit('messagesRead', {
+        userId,
+        messageIds,
+      });
     } catch (err) {
       console.error('Failed to mark messages as read:', err);
     }
   });
 
-  // Disconnect
+  // ✅ Delivery Status: messageDelivered
+  socket.on('messageDelivered', async ({ chatId }) => {
+    try {
+      // Update messages as delivered (but not sent by self)
+      await Message.updateMany(
+        {
+          chat: chatId,
+          status: 'sent',
+          sender: { $ne: userId },
+        },
+        { $set: { status: 'delivered' } }
+      );
+
+      // Get delivered message IDs
+      const deliveredMessages = await Message.find({
+        chat: chatId,
+        status: 'delivered',
+        sender: { $ne: userId },
+      }).select('_id');
+
+      const messageIds = deliveredMessages.map((msg) => msg._id.toString());
+
+      // Notify other users
+      socket.to(chatId).emit('messagesDelivered', {
+        userId,
+        messageIds,
+      });
+    } catch (err) {
+      console.error('Failed to mark messages as delivered:', err);
+    }
+  });
+
+  // Handle disconnect
   socket.on('disconnect', async () => {
     onlineUsers.delete(userId);
     io.emit('activeUsers', Array.from(onlineUsers.keys()));
+
     try {
       await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
     } catch (err) {
