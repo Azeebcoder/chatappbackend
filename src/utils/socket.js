@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
   });
 
   // ✅ Delivery Status: messageDelivered
-  socket.on('messageDelivered', async ({ chatId }) => {
+  socket.on('messagesDelivered', async ({ chatId }) => {
     try {
       // Update messages as delivered (but not sent by self)
       await Message.updateMany(
